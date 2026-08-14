@@ -14,6 +14,7 @@ function App() {
   });
   const [installPrompt, setInstallPrompt] = useState(null);
   const [installMessage, setInstallMessage] = useState('');
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event) => {
@@ -24,12 +25,23 @@ function App() {
     const handleAppInstalled = () => {
       setInstallPrompt(null);
       setInstallMessage('App installed successfully.');
+      setIsInstalled(true);
     };
 
+    const updateStandaloneState = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      setIsInstalled(standalone);
+    };
+
+    updateStandaloneState();
+
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    mediaQuery.addEventListener?.('change', updateStandaloneState);
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
+      mediaQuery.removeEventListener?.('change', updateStandaloneState);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
@@ -51,13 +63,14 @@ function App() {
       installPrompt.prompt();
       const choice = await installPrompt.userChoice;
       if (choice.outcome === 'accepted') {
+        setIsInstalled(true);
         setInstallMessage('The app was installed successfully.');
       }
       setInstallPrompt(null);
       return;
     }
 
-    setInstallMessage('Use your browser menu and choose “Add to Home Screen” or “Install app”.');
+    setInstallMessage('On iPhone, tap the Share button and choose “Add to Home Screen”. On Android, use the browser menu and choose “Install app”.');
   };
 
   return (
@@ -70,12 +83,20 @@ function App() {
         </aside>
 
         <section className="form-card">
-          <div className="install-bar">
-            <button type="button" className="install-app" onClick={handleInstallClick}>
-              Install app
-            </button>
-            {installMessage && <p className="install-message">{installMessage}</p>}
-          </div>
+          {!isInstalled && (
+            <div className="install-bar">
+              {installPrompt ? (
+                <button type="button" className="install-app" onClick={handleInstallClick}>
+                  Install app
+                </button>
+              ) : (
+                <button type="button" className="install-app" onClick={handleInstallClick}>
+                  Add to Home Screen
+                </button>
+              )}
+              {installMessage && <p className="install-message">{installMessage}</p>}
+            </div>
+          )}
 
           <h2>Place an Order</h2>
           <p className="form-desc">Fast delivery — fill in your details and we'll bring LPG to you.</p>
