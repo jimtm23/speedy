@@ -1,68 +1,100 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import './styles.css';
 
 function App() {
-  const [installPrompt, setInstallPrompt] = useState(null);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    cylinder: '12kg',
+    quantity: 1,
+    date: '',
+    payment: 'cash',
+    notes: '',
+  });
 
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (event) => {
-      event.preventDefault();
-      setInstallPrompt(event);
-    };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((s) => ({ ...s, [name]: value }));
+  };
 
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setInstallPrompt(null);
-    };
-
-    const displayMode = window.matchMedia('(display-mode: standalone)');
-    const syncInstalledState = () => setIsInstalled(displayMode.matches);
-
-    syncInstalledState();
-    displayMode.addEventListener?.('change', syncInstalledState);
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    return () => {
-      displayMode.removeEventListener?.('change', syncInstalledState);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (!installPrompt) return;
-
-    installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
-
-    if (choice.outcome === 'accepted') {
-      setIsInstalled(true);
-    }
-
-    setInstallPrompt(null);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    alert('Order submitted — see console for payload.');
+    console.log('Order payload:', form);
   };
 
   return (
     <main className="app-shell">
-      <section className="card">
-        <p className="eyebrow">Progressive Web App</p>
-        <h1>React PWA Starter</h1>
-        <p className="description">
-          This app is designed to install on mobile like a native app, with offline support,
-          standalone display mode, and app-like behavior.
-        </p>
+      <div className="split">
+        <aside className="hero">
+          <div className="logo">Speedy <span>LPG</span></div>
+          <p className="tagline">LPG express delivery</p>
+          <div className="hero-decor" aria-hidden />
+        </aside>
 
-        {isInstalled ? (
-          <div className="status success">Installed on this device</div>
-        ) : installPrompt ? (
-          <button type="button" className="install-button" onClick={handleInstallClick}>
-            Install on mobile
-          </button>
-        ) : (
-          <div className="status">Open in Chrome or Safari on mobile to see the install prompt.</div>
-        )}
-      </section>
+        <section className="form-card">
+          <h2>Place an Order</h2>
+          <p className="form-desc">Fast delivery — fill in your details and we'll bring LPG to you.</p>
+
+          <form onSubmit={handleSubmit} className="order-form">
+            <label>
+              Full name
+              <input name="name" value={form.name} onChange={handleChange} required />
+            </label>
+
+            <label>
+              Phone
+              <input name="phone" value={form.phone} onChange={handleChange} required />
+            </label>
+
+            <label>
+              Delivery address
+              <textarea name="address" value={form.address} onChange={handleChange} rows={2} required />
+            </label>
+
+            <div className="row">
+              <label>
+                Cylinder
+                <select name="cylinder" value={form.cylinder} onChange={handleChange}>
+                  <option>12kg</option>
+                  <option>5kg</option>
+                  <option>45kg</option>
+                </select>
+              </label>
+
+              <label>
+                Quantity
+                <input type="number" min="1" name="quantity" value={form.quantity} onChange={handleChange} />
+              </label>
+            </div>
+
+            <label>
+              Preferred delivery date
+              <input type="date" name="date" value={form.date} onChange={handleChange} />
+            </label>
+
+            <label>
+              Payment method
+              <select name="payment" value={form.payment} onChange={handleChange}>
+                <option value="cash">Cash on delivery</option>
+                <option value="card">Card</option>
+                <option value="online">Online</option>
+              </select>
+            </label>
+
+            <label>
+              Notes (optional)
+              <textarea name="notes" value={form.notes} onChange={handleChange} rows={2} />
+            </label>
+
+            <div className="actions">
+              <button type="submit" className="submit">Send Order</button>
+              <button type="button" className="secondary" onClick={() => setForm({ name: '', phone: '', address: '', cylinder: '12kg', quantity: 1, date: '', payment: 'cash', notes: '' })}>Reset</button>
+            </div>
+          </form>
+        </section>
+      </div>
     </main>
   );
 }
