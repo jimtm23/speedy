@@ -1,166 +1,107 @@
-import { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import './styles.css';
+import logo from './assets/speedy.png';
 
-function App() {
-  const [form, setForm] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    cylinder: '12kg',
-    quantity: 1,
-    date: '',
-    payment: 'cash',
-    notes: '',
-  });
-  const [installPrompt, setInstallPrompt] = useState(null);
-  const [installMessage, setInstallMessage] = useState('');
-  const [isInstalled, setIsInstalled] = useState(false);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (event) => {
-      event.preventDefault();
-      setInstallPrompt(event);
-    };
-
-    const handleAppInstalled = () => {
-      setInstallPrompt(null);
-      setInstallMessage('App installed successfully.');
-      setIsInstalled(true);
-    };
-
-    const updateStandaloneState = () => {
-      const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-      setIsInstalled(standalone);
-    };
-
-    updateStandaloneState();
-
-    const mediaQuery = window.matchMedia('(display-mode: standalone)');
-    mediaQuery.addEventListener?.('change', updateStandaloneState);
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    return () => {
-      mediaQuery.removeEventListener?.('change', updateStandaloneState);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((s) => ({ ...s, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert('Order submitted — see console for payload.');
-    console.log('Order payload:', form);
-  };
-
-  const handleInstallClick = async () => {
-    if (installPrompt) {
-      installPrompt.prompt();
-      const choice = await installPrompt.userChoice;
-      if (choice.outcome === 'accepted') {
-        setIsInstalled(true);
-        setInstallMessage('The app was installed successfully.');
-      }
-      setInstallPrompt(null);
-      return;
-    }
-
-    setInstallMessage('On iPhone, tap the Share button and choose “Add to Home Screen”. On Android, use the browser menu and choose “Install app”.');
-  };
-
+function OrderStatus({ current = 1 }) {
+  const steps = ['Order Received', 'Dispatched', 'Out for Delivery', 'Delivered'];
   return (
-    <main className="app-shell">
-      <div className="split">
-        <aside className="hero">
-          <div className="logo">Speedy <span>LPG</span></div>
-          <p className="tagline">LPG express delivery</p>
-          <div className="hero-decor" aria-hidden />
-        </aside>
-
-        <section className="form-card">
-          {!isInstalled && (
-            <div className="install-bar">
-              {installPrompt ? (
-                <button type="button" className="install-app" onClick={handleInstallClick}>
-                  Install app
-                </button>
-              ) : (
-                <button type="button" className="install-app" onClick={handleInstallClick}>
-                  Add to Home Screen
-                </button>
-              )}
-              {installMessage && <p className="install-message">{installMessage}</p>}
-            </div>
-          )}
-
-          <h2>Place an Order</h2>
-          <p className="form-desc">Fast delivery — fill in your details and we'll bring LPG to you.</p>
-
-          <form onSubmit={handleSubmit} className="order-form">
-            <label>
-              Full name
-              <input name="name" value={form.name} onChange={handleChange} required />
-            </label>
-
-            <label>
-              Phone
-              <input name="phone" value={form.phone} onChange={handleChange} required />
-            </label>
-
-            <label>
-              Delivery address
-              <textarea name="address" value={form.address} onChange={handleChange} rows={2} required />
-            </label>
-
-            <div className="row">
-              <label>
-                Cylinder
-                <select name="cylinder" value={form.cylinder} onChange={handleChange}>
-                  <option>12kg</option>
-                  <option>5kg</option>
-                  <option>45kg</option>
-                </select>
-              </label>
-
-              <label>
-                Quantity
-                <input type="number" min="1" name="quantity" value={form.quantity} onChange={handleChange} />
-              </label>
-            </div>
-
-            <label>
-              Preferred delivery date
-              <input type="date" name="date" value={form.date} onChange={handleChange} />
-            </label>
-
-            <label>
-              Payment method
-              <select name="payment" value={form.payment} onChange={handleChange}>
-                <option value="cash">Cash on delivery</option>
-                <option value="card">Card</option>
-                <option value="online">Online</option>
-              </select>
-            </label>
-
-            <label>
-              Notes (optional)
-              <textarea name="notes" value={form.notes} onChange={handleChange} rows={2} />
-            </label>
-
-            <div className="actions">
-              <button type="submit" className="submit">Send Order</button>
-              <button type="button" className="secondary" onClick={() => setForm({ name: '', phone: '', address: '', cylinder: '12kg', quantity: 1, date: '', payment: 'cash', notes: '' })}>Reset</button>
-            </div>
-          </form>
-        </section>
-      </div>
-    </main>
+    <div className="order-status">
+      <div className="status-track" />
+      {steps.map((label, idx) => {
+        const step = idx + 1;
+        const state = step < current ? 'done' : step === current ? 'current' : 'pending';
+        return (
+          <div key={label} className="status-step">
+            <div className={`status-dot ${state}`} aria-hidden />
+            <div className="status-label">{label}</div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  const [address, setAddress] = useState('');
+  const [cylinder, setCylinder] = useState('11kg');
+  const [quantity, setQuantity] = useState(1);
+  const [deliveryOpt, setDeliveryOpt] = useState('speedy');
+
+  const placeOrder = (e) => {
+    e?.preventDefault();
+    const payload = { address, cylinder, quantity, deliveryOpt };
+    console.log('Place order', payload);
+    alert('Order placed — check console for payload');
+  };
+
+  return (
+    <div className="order-screen">
+      <header className="topbar">
+        <div className="topbar-inner">
+          <div className="brand">
+            <img src={logo} alt="Speedy LPG" className="header-logo" />
+            <div className="brand-title">SPEEDY LPG - Order & Track</div>
+          </div>
+        </div>
+      </header>
+
+      <main className="new-order-card">
+        <h1 className="page-title">NEW ORDER</h1>
+
+        <label className="gps-input">
+          <span className="gps-icon">📍</span>
+          <input placeholder="Location (GPS enabled)" value={address} onChange={(e) => setAddress(e.target.value)} />
+        </label>
+
+        <div className="section">
+          <div className="section-title">LPG Cylinder Type</div>
+          <div className="cylinder-cards">
+            <button className={`cyl-card ${cylinder === '11kg' ? 'selected' : ''}`} onClick={() => setCylinder('11kg')}>
+              <div className="cyl-img">🛢️</div>
+              <div className="cyl-label">11kg<br/><span>Standard</span></div>
+            </button>
+            <button className={`cyl-card ${cylinder === '5kg' ? 'selected' : ''}`} onClick={() => setCylinder('5kg')}>
+              <div className="cyl-img">🛢️</div>
+              <div className="cyl-label">5kg<br/><span>Compact</span></div>
+            </button>
+            <button className={`cyl-card ${cylinder === '45kg' ? 'selected' : ''}`} onClick={() => setCylinder('45kg')}>
+              <div className="cyl-img">🛢️</div>
+              <div className="cyl-label">45kg<br/><span>Industrial</span></div>
+            </button>
+          </div>
+        </div>
+
+        <div className="section qty-row">
+          <div className="section-title">Quantity</div>
+          <div className="qty-controls">
+            <button onClick={() => setQuantity((q) => Math.max(1, q - 1))}>−</button>
+            <div className="qty-val">{quantity}</div>
+            <button onClick={() => setQuantity((q) => q + 1)}>+</button>
+          </div>
+        </div>
+
+        <div className="section">
+          <div className="section-title">Delivery Option</div>
+          <div className="tabs">
+            <button className={`tab ${deliveryOpt === 'speedy' ? 'active' : ''}`} onClick={() => setDeliveryOpt('speedy')}>Speedy (within 1 hr)</button>
+            <button className={`tab ${deliveryOpt === 'scheduled' ? 'active' : ''}`} onClick={() => setDeliveryOpt('scheduled')}>Scheduled</button>
+          </div>
+        </div>
+
+        <div className="order-status-wrap">
+          <OrderStatus current={2} />
+        </div>
+
+        <button className="place-order" onClick={placeOrder}>PLACE ORDER</button>
+
+      </main>
+
+      <nav className="bottom-nav">
+        <button className="nav-btn">Home</button>
+        <button className="nav-btn active">Orders</button>
+        <button className="nav-btn">Track</button>
+        <button className="nav-btn">Profile</button>
+      </nav>
+    </div>
+  );
+}
